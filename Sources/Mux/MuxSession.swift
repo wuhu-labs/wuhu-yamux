@@ -154,7 +154,9 @@ internal actor _SessionState {
     guard let ss = streams[sid] else { return }
 
     if let data = payload, !data.isEmpty {
-      await ss.receiveData(data, session: self)
+      if let windowUpdate = await ss.receiveData(data) {
+        try? await writeFrameInternal(windowUpdate, payload: nil)
+      }
     }
     if frame.flags.contains(.fin) {
       await ss.receiveFinish()
@@ -282,15 +284,15 @@ internal actor _SessionState {
 
   // MARK: - Close
 
-  func forceClose() {
+  func forceClose() async {
     if isClosed { return }
     isClosed = true
     for (_, ss) in streams {
-      Task { await ss.failPending() }
+      await ss.failPending()
     }
     streams.removeAll()
     _inboundContinuation.finish()
-    Task { await connection.close() }
+    await connection.close()
   }
 
   private func shouldStop() -> Bool {
@@ -299,11 +301,11 @@ internal actor _SessionState {
     return false
   }
 
-  private func teardown() {
+  private func teardown() async {
     if isClosed { return }
     isClosed = true
     for (_, ss) in streams {
-      Task { await ss.failPending() }
+      await ss.failPending()
     }
     streams.removeAll()
     _inboundContinuation.finish()

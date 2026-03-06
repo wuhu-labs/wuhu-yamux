@@ -139,7 +139,9 @@ internal actor _StreamState {
     return stream
   }
 
-  func receiveData(_ data: [UInt8], session: _SessionState) {
+  /// Receive data from the remote peer. Returns an optional window update
+  /// frame that the caller (the session's read loop) must send.
+  func receiveData(_ data: [UInt8]) -> Frame? {
     recvConsumed += UInt32(data.count)
 
     if readStreamAttached, let cont = readContinuation {
@@ -152,9 +154,9 @@ internal actor _StreamState {
     if recvConsumed >= initialWindowSize / 2 {
       let delta = recvConsumed
       recvConsumed = 0
-      let frame = Frame(type: .windowUpdate, flags: [], streamID: streamID, length: delta)
-      Task { try? await session.writeFrameInternal(frame, payload: nil) }
+      return Frame(type: .windowUpdate, flags: [], streamID: streamID, length: delta)
     }
+    return nil
   }
 
   func receiveFinish() {
