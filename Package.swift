@@ -25,6 +25,9 @@ let package = Package(
     .package(url: "https://github.com/apple/swift-nio.git", from: "2.65.0"),
     .package(url: "https://github.com/hummingbird-project/hummingbird.git", from: "2.0.0"),
     .package(url: "https://github.com/hummingbird-project/hummingbird-websocket.git", from: "2.0.0"),
+    // Pin swift-collections < 1.4.0 to work around Hummingbird's missing
+    // `import DequeModule` — see https://github.com/hummingbird-project/hummingbird/issues/791
+    .package(url: "https://github.com/apple/swift-collections.git", "1.0.0" ..< "1.4.0"),
   ],
   targets: [
     // MARK: - Core protocol (zero external dependencies)
