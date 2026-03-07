@@ -23,6 +23,9 @@ let package = Package(
   ],
   dependencies: [
     .package(url: "https://github.com/apple/swift-nio.git", from: "2.65.0"),
+    .package(url: "https://github.com/hummingbird-project/swift-websocket.git", from: "1.0.0"),
+    // Test-only: Hummingbird provides a convenient WebSocket server for integration tests.
+    // Not used by any library targets.
     .package(url: "https://github.com/hummingbird-project/hummingbird.git", from: "2.0.0"),
     .package(url: "https://github.com/hummingbird-project/hummingbird-websocket.git", from: "2.0.0"),
     // Pin swift-collections < 1.4.0 to work around Hummingbird's missing
@@ -47,13 +50,12 @@ let package = Package(
       swiftSettings: strictConcurrency
     ),
 
-    // MARK: - WebSocket transport (Hummingbird)
+    // MARK: - WebSocket transport (swift-websocket)
     .target(
       name: "MuxWebSocket",
       dependencies: [
         "Mux",
-        .product(name: "HummingbirdWebSocket", package: "hummingbird-websocket"),
-        .product(name: "HummingbirdWSClient", package: "hummingbird-websocket"),
+        .product(name: "WSCore", package: "swift-websocket"),
       ],
       swiftSettings: strictConcurrency
     ),
@@ -78,6 +80,9 @@ let package = Package(
         "Mux",
         "MuxTCP",
         "MuxWebSocket",
+        .product(name: "Hummingbird", package: "hummingbird"),
+        .product(name: "HummingbirdWebSocket", package: "hummingbird-websocket"),
+        .product(name: "WSClient", package: "swift-websocket"),
       ],
       swiftSettings: strictConcurrency
     ),
