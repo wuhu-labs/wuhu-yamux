@@ -18,7 +18,7 @@ let package = Package(
   ],
   products: [
     .library(name: "Mux", targets: ["Mux"]),
-    .library(name: "MuxTCP", targets: ["MuxTCP"]),
+    .library(name: "MuxSocket", targets: ["MuxSocket"]),
     .library(name: "MuxWebSocket", targets: ["MuxWebSocket"]),
   ],
   dependencies: [
@@ -34,57 +34,61 @@ let package = Package(
   ],
   targets: [
     // MARK: - Core protocol (zero external dependencies)
+
     .target(
       name: "Mux",
-      swiftSettings: strictConcurrency
+      swiftSettings: strictConcurrency,
     ),
 
     // MARK: - TCP / Unix domain socket transport (SwiftNIO)
+
     .target(
-      name: "MuxTCP",
+      name: "MuxSocket",
       dependencies: [
         "Mux",
         .product(name: "NIOCore", package: "swift-nio"),
         .product(name: "NIOPosix", package: "swift-nio"),
       ],
-      swiftSettings: strictConcurrency
+      swiftSettings: strictConcurrency,
     ),
 
     // MARK: - WebSocket transport (swift-websocket)
+
     .target(
       name: "MuxWebSocket",
       dependencies: [
         "Mux",
         .product(name: "WSCore", package: "swift-websocket"),
       ],
-      swiftSettings: strictConcurrency
+      swiftSettings: strictConcurrency,
     ),
 
     // MARK: - Tests
+
     .testTarget(
       name: "MuxTests",
       dependencies: ["Mux"],
-      swiftSettings: strictConcurrency
+      swiftSettings: strictConcurrency,
     ),
     .testTarget(
-      name: "MuxTCPTests",
+      name: "MuxSocketTests",
       dependencies: [
         "Mux",
-        "MuxTCP",
+        "MuxSocket",
       ],
-      swiftSettings: strictConcurrency
+      swiftSettings: strictConcurrency,
     ),
     .testTarget(
       name: "MuxWebSocketTests",
       dependencies: [
         "Mux",
-        "MuxTCP",
+        "MuxSocket",
         "MuxWebSocket",
         .product(name: "Hummingbird", package: "hummingbird"),
         .product(name: "HummingbirdWebSocket", package: "hummingbird-websocket"),
         .product(name: "WSClient", package: "swift-websocket"),
       ],
-      swiftSettings: strictConcurrency
+      swiftSettings: strictConcurrency,
     ),
-  ]
+  ],
 )

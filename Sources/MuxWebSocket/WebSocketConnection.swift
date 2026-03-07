@@ -1,9 +1,9 @@
 #if canImport(Glibc)
-import Glibc
+  import Glibc
 #elseif canImport(Musl)
-import Musl
+  import Musl
 #elseif canImport(Darwin)
-import Darwin
+  import Darwin
 #endif
 
 import Mux
@@ -49,13 +49,13 @@ public final class WebSocketConnection: Connection, @unchecked Sendable {
   public init(
     inbound: WebSocketInboundStream,
     outbound: WebSocketOutboundWriter,
-    maxWriteFrameSize: Int = defaultMaxWebSocketFrameSize
+    maxWriteFrameSize: Int = defaultMaxWebSocketFrameSize,
   ) {
     precondition(maxWriteFrameSize > 0, "maxWriteFrameSize must be positive")
     self.inbound = inbound
     self.outbound = outbound
     self.maxWriteFrameSize = maxWriteFrameSize
-    self.readState = _WSReadState(inbound: inbound)
+    readState = _WSReadState(inbound: inbound)
   }
 
   public func read(into buffer: UnsafeMutableRawBufferPointer) async throws -> Int {
@@ -88,7 +88,7 @@ final class _WSReadState: @unchecked Sendable {
   private var eof = false
 
   init(inbound: WebSocketInboundStream) {
-    self.iterator = inbound.makeAsyncIterator()
+    iterator = inbound.makeAsyncIterator()
   }
 
   func read(into buffer: UnsafeMutableRawBufferPointer) async throws -> Int {

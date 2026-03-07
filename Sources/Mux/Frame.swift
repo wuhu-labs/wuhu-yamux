@@ -67,9 +67,9 @@ public struct FrameFlags: OptionSet, Sendable, Equatable {
 
 // MARK: - Encoding / Decoding
 
-extension Frame {
+public extension Frame {
   /// Encode the frame header into a 12-byte array.
-  public func encodedHeader() -> [UInt8] {
+  func encodedHeader() -> [UInt8] {
     var bytes = [UInt8](repeating: 0, count: Frame.headerSize)
     bytes[0] = Frame.version
     bytes[1] = type.rawValue
@@ -88,7 +88,7 @@ extension Frame {
 
   /// Decode a frame header from a 12-byte buffer.
   /// - Throws: `MuxError.invalidFrame` if the version is unsupported or type is unknown.
-  public static func decode(from bytes: [UInt8]) throws -> Frame {
+  static func decode(from bytes: [UInt8]) throws -> Frame {
     guard bytes.count >= headerSize else {
       throw MuxError.invalidFrame("Header too short: \(bytes.count) bytes")
     }

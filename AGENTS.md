@@ -36,12 +36,16 @@ Key types:
 - **`MuxConfig`** — tuning: window size, keepalive interval/timeout, max frame payload.
 - **`MuxSessionRole`** — `.initiator` (odd stream IDs) or `.responder` (even stream IDs).
 
-### `MuxTCP` — TCP / Unix domain socket transport (SwiftNIO)
+### `MuxSocket` — TCP / Unix domain socket transport (SwiftNIO)
 
-- **`TCPConnection`** — wraps a NIO `Channel` as a `Connection`.
-- **`TCPListener`** — accepts inbound connections, yields `MuxSession`s.
-- **`TCPConnector`** — dials a remote address, returns a `MuxSession`.
-- Unix domain socket support via the same types with UDS addresses.
+- **`SocketConnection`** — wraps a NIO `Channel` as a `Connection`. Works for
+  both TCP and Unix domain sockets (NIO's `Channel` is transport-agnostic).
+- **`SocketListener`** — accepts inbound connections on TCP or UDS, yields
+  `SocketConnection`s. For UDS, handles stale socket file cleanup on bind and
+  removes the socket file on close.
+- **`SocketConnector`** — dials a TCP or UDS address, returns a `SocketConnection`.
+- **`SocketError`** — UDS-specific errors (`pathExistsButNotSocket`,
+  `socketAlreadyInUse`).
 
 ### `MuxWebSocket` — WebSocket transport (swift-websocket)
 
