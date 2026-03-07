@@ -336,7 +336,11 @@ struct UDSIntegrationTests {
 
     // Create a stale socket file using raw POSIX syscalls.
     // This simulates a server that crashed without cleaning up.
-    let fd = socket(AF_UNIX, Int32(SOCK_STREAM.rawValue), 0)
+    #if canImport(Darwin)
+      let fd = socket(AF_UNIX, SOCK_STREAM, 0)
+    #else
+      let fd = socket(AF_UNIX, Int32(SOCK_STREAM.rawValue), 0)
+    #endif
     #expect(fd >= 0, "Failed to create socket")
 
     var addr = sockaddr_un()
