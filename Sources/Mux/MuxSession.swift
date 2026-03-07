@@ -4,10 +4,10 @@
 /// The session manages the yamux state machine: stream table, flow control
 /// windows, keepalive timer, GoAway state.
 public struct MuxSession: Sendable {
-  internal let state: _SessionState
+  let state: _SessionState
 
   public init(connection: any Connection, role: MuxSessionRole, config: MuxConfig = .default) {
-    self.state = _SessionState(connection: connection, role: role, config: config)
+    state = _SessionState(connection: connection, role: role, config: config)
   }
 
   /// Run the session (read loop + keepalive). Call this in a long-lived task.
@@ -39,7 +39,7 @@ public struct MuxSession: Sendable {
 
 // MARK: - Session State Actor
 
-internal actor _SessionState {
+actor _SessionState {
   let connection: any Connection
   let role: MuxSessionRole
   let config: MuxConfig
@@ -54,18 +54,18 @@ internal actor _SessionState {
   private let _inboundContinuation: AsyncStream<MuxStream>.Continuation
   let inboundStream: AsyncStream<MuxStream>
 
-  // Keepalive
-  private var pendingPingID: UInt32? = nil
+  /// Keepalive
+  private var pendingPingID: UInt32?
 
   init(connection: any Connection, role: MuxSessionRole, config: MuxConfig) {
     self.connection = connection
     self.role = role
     self.config = config
-    self.nextStreamID = role == .initiator ? 1 : 2
+    nextStreamID = role == .initiator ? 1 : 2
 
     let (stream, continuation) = AsyncStream<MuxStream>.makeStream()
-    self.inboundStream = stream
-    self._inboundContinuation = continuation
+    inboundStream = stream
+    _inboundContinuation = continuation
   }
 
   // MARK: - Run
@@ -94,7 +94,7 @@ internal actor _SessionState {
       let frame = try Frame.decode(from: headerBytes)
 
       var payload: [UInt8]? = nil
-      if frame.type == .data && frame.length > 0 {
+      if frame.type == .data, frame.length > 0 {
         guard let data = try await readExact(count: Int(frame.length)) else {
           throw MuxError.connectionLost
         }
@@ -117,7 +117,7 @@ internal actor _SessionState {
     while totalRead < count {
       let slice = UnsafeMutableRawBufferPointer(
         start: buf.baseAddress! + totalRead,
-        count: count - totalRead
+        count: count - totalRead,
       )
       let n = try await connection.read(into: slice)
       if n == 0 {
@@ -205,7 +205,7 @@ internal actor _SessionState {
     }
   }
 
-  private func handleGoAwayReceived(_ frame: Frame) {
+  private func handleGoAwayReceived(_: Frame) {
     goAwayReceived = true
     _inboundContinuation.finish()
   }
@@ -250,8 +250,13 @@ internal actor _SessionState {
     }
   }
 
-  private func setPendingPing(_ id: UInt32) { pendingPingID = id }
-  private func checkPingTimeout(_ id: UInt32) -> Bool { pendingPingID == id }
+  private func setPendingPing(_ id: UInt32) {
+    pendingPingID = id
+  }
+
+  private func checkPingTimeout(_ id: UInt32) -> Bool {
+    pendingPingID == id
+  }
 
   // MARK: - Open
 
@@ -297,7 +302,7 @@ internal actor _SessionState {
 
   private func shouldStop() -> Bool {
     if isClosed { return true }
-    if goAwaySent && goAwayReceived && streams.isEmpty { return true }
+    if goAwaySent, goAwayReceived, streams.isEmpty { return true }
     return false
   }
 
@@ -333,7 +338,7 @@ internal actor _SessionState {
     guard let ss = streams[id] else { return }
     let local = await ss.isLocalFinished()
     let remote = await ss.isRemoteFinished()
-    if local && remote {
+    if local, remote {
       streams.removeValue(forKey: id)
     }
   }

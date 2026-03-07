@@ -1,9 +1,9 @@
 #if canImport(Glibc)
-import Glibc
+  import Glibc
 #elseif canImport(Musl)
-import Musl
+  import Musl
 #elseif canImport(Darwin)
-import Darwin
+  import Darwin
 #endif
 
 /// Paired in-memory connections for testing.
@@ -63,8 +63,13 @@ final class _PipeState: @unchecked Sendable {
     pthread_mutex_destroy(&_lock)
   }
 
-  private func lock() { pthread_mutex_lock(&_lock) }
-  private func unlock() { pthread_mutex_unlock(&_lock) }
+  private func lock() {
+    pthread_mutex_lock(&_lock)
+  }
+
+  private func unlock() {
+    pthread_mutex_unlock(&_lock)
+  }
 
   func write(_ bytes: [UInt8]) async throws {
     guard !bytes.isEmpty else { return }

@@ -6,13 +6,13 @@ public struct MuxStream: Sendable {
   /// The stream ID.
   public let id: UInt32
 
-  internal let _state: _StreamState
-  internal let _session: _SessionState
+  let _state: _StreamState
+  let _session: _SessionState
 
-  internal init(id: UInt32, state: _StreamState, session: _SessionState) {
+  init(id: UInt32, state: _StreamState, session: _SessionState) {
     self.id = id
-    self._state = state
-    self._session = session
+    _state = state
+    _session = session
   }
 
   /// An `AsyncSequence` of `[UInt8]` data chunks received on this stream.
@@ -69,7 +69,7 @@ public struct MuxStream: Sendable {
 
 // MARK: - Stream State Actor
 
-internal actor _StreamState {
+actor _StreamState {
   let streamID: UInt32
   let initialWindowSize: UInt32
 
@@ -84,21 +84,29 @@ internal actor _StreamState {
   private var readStream: AsyncStream<[UInt8]>?
   private var readStreamAttached = false
 
-  // Write side — flow control waiters
+  /// Write side — flow control waiters
   private var sendWaiters: [(needed: UInt32, continuation: CheckedContinuation<Void, any Error>)] = []
 
-  // Receive window tracking for sending window updates
+  /// Receive window tracking for sending window updates
   private var recvConsumed: UInt32 = 0
 
   init(streamID: UInt32, initialWindowSize: UInt32) {
     self.streamID = streamID
     self.initialWindowSize = initialWindowSize
-    self.sendWindow = Int64(initialWindowSize)
+    sendWindow = Int64(initialWindowSize)
   }
 
-  func isLocalFinished() -> Bool { localFinished }
-  func isRemoteFinished() -> Bool { remoteFinished }
-  func isReset() -> Bool { isResetFlag }
+  func isLocalFinished() -> Bool {
+    localFinished
+  }
+
+  func isRemoteFinished() -> Bool {
+    remoteFinished
+  }
+
+  func isReset() -> Bool {
+    isResetFlag
+  }
 
   /// Returns true if was already finished.
   func setLocalFinished() -> Bool {

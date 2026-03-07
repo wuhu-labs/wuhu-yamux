@@ -1,11 +1,11 @@
-import Testing
 @testable import Mux
+import Testing
 
 // MARK: - Helper
 
 private func readBytes(
   from connection: any Connection,
-  maxCount: Int
+  maxCount: Int,
 ) async throws -> [UInt8] {
   let buf = UnsafeMutableRawBufferPointer.allocate(byteCount: maxCount, alignment: 1)
   defer { buf.deallocate() }
@@ -16,7 +16,7 @@ private func readBytes(
 /// Helper: create a session pair with keepalive disabled, run both, execute body, then clean up.
 private func withSessionPair(
   config: MuxConfig = MuxConfig(keepaliveInterval: nil),
-  body: (MuxSession, MuxSession) async throws -> Void
+  body: (MuxSession, MuxSession) async throws -> Void,
 ) async throws {
   let (connA, connB) = InMemoryConnection.makePair()
   let sessionA = MuxSession(connection: connA, role: .initiator, config: config)
@@ -178,11 +178,15 @@ struct StreamLifecycleTests {
       try await streamB.finish()
 
       var bReceived: [UInt8] = []
-      for await chunk in await streamB.bytes { bReceived.append(contentsOf: chunk) }
+      for await chunk in await streamB.bytes {
+        bReceived.append(contentsOf: chunk)
+      }
       #expect(bReceived == [1, 2, 3])
 
       var aReceived: [UInt8] = []
-      for await chunk in await streamA.bytes { aReceived.append(contentsOf: chunk) }
+      for await chunk in await streamA.bytes {
+        aReceived.append(contentsOf: chunk)
+      }
       #expect(aReceived == [4, 5, 6])
     }
   }
@@ -202,7 +206,7 @@ struct FlowControlTests {
     let config = MuxConfig(
       initialWindowSize: 256 * 1024,
       maxFramePayloadSize: 16,
-      keepaliveInterval: nil
+      keepaliveInterval: nil,
     )
     try await withSessionPair(config: config) { a, b in
       let stream = try await a.open()
@@ -227,7 +231,7 @@ struct FlowControlTests {
     let config = MuxConfig(
       initialWindowSize: 64,
       maxFramePayloadSize: 32,
-      keepaliveInterval: nil
+      keepaliveInterval: nil,
     )
     try await withSessionPair(config: config) { a, b in
       let stream = try await a.open()
@@ -236,7 +240,9 @@ struct FlowControlTests {
 
       let receiveTask = Task { () -> [UInt8] in
         var r: [UInt8] = []
-        for await chunk in await remote.bytes { r.append(contentsOf: chunk) }
+        for await chunk in await remote.bytes {
+          r.append(contentsOf: chunk)
+        }
         return r
       }
 
@@ -255,7 +261,7 @@ struct FlowControlTests {
 struct GoAwayTests {
   @Test("GoAway rejects new opens")
   func rejectsNew() async throws {
-    try await withSessionPair { a, b in
+    try await withSessionPair { a, _ in
       try await a.goAway()
       try await Task.sleep(for: .milliseconds(100))
       await #expect(throws: MuxError.self) {
@@ -279,7 +285,9 @@ struct GoAwayTests {
       try await stream.finish()
 
       var received: [UInt8] = []
-      for await chunk in await remote.bytes { received.append(contentsOf: chunk) }
+      for await chunk in await remote.bytes {
+        received.append(contentsOf: chunk)
+      }
       #expect(received == [99])
       try await remote.finish()
     }
@@ -294,7 +302,7 @@ struct KeepaliveTests {
   func pingPong() async throws {
     let config = MuxConfig(
       keepaliveInterval: .milliseconds(100),
-      keepaliveTimeout: .milliseconds(200)
+      keepaliveTimeout: .milliseconds(200),
     )
     let (connA, connB) = InMemoryConnection.makePair()
     let a = MuxSession(connection: connA, role: .initiator, config: config)
@@ -313,10 +321,10 @@ struct KeepaliveTests {
   }
 
   @Test("Keepalive timeout tears down session")
-  func timeout() async throws {
+  func timeout() async {
     let config = MuxConfig(
       keepaliveInterval: .milliseconds(50),
-      keepaliveTimeout: .milliseconds(50)
+      keepaliveTimeout: .milliseconds(50),
     )
     let (connA, connB) = InMemoryConnection.makePair()
     let a = MuxSession(connection: connA, role: .initiator, config: config)
@@ -361,7 +369,7 @@ struct ConcurrencyTests {
 
       var streams: [MuxStream] = []
       for _ in 0 ..< n {
-        streams.append(try await a.open())
+        try await streams.append(a.open())
       }
 
       // Collect on B
@@ -372,7 +380,9 @@ struct ConcurrencyTests {
         for await s in b.inbound {
           let t = Task { () -> (UInt32, [UInt8]) in
             var d: [UInt8] = []
-            for await chunk in await s.bytes { d.append(contentsOf: chunk) }
+            for await chunk in await s.bytes {
+              d.append(contentsOf: chunk)
+            }
             return (s.id, d)
           }
           tasks.append(t)
@@ -423,7 +433,7 @@ struct ConcurrencyTests {
 struct ErrorHandlingTests {
   @Test("Write after finish throws streamClosed")
   func writeAfterFinish() async throws {
-    try await withSessionPair { a, b in
+    try await withSessionPair { a, _ in
       let stream = try await a.open()
       try await stream.finish()
       await #expect(throws: MuxError.self) {
@@ -434,7 +444,7 @@ struct ErrorHandlingTests {
 
   @Test("Write after reset throws streamReset")
   func writeAfterReset() async throws {
-    try await withSessionPair { a, b in
+    try await withSessionPair { a, _ in
       let stream = try await a.open()
       try await stream.reset()
       await #expect(throws: MuxError.self) {
@@ -447,7 +457,7 @@ struct ErrorHandlingTests {
   func openAfterClose() async throws {
     let (connA, connB) = InMemoryConnection.makePair()
     let a = MuxSession(connection: connA, role: .initiator, config: MuxConfig(keepaliveInterval: nil))
-    let _ = MuxSession(connection: connB, role: .responder, config: MuxConfig(keepaliveInterval: nil))
+    _ = MuxSession(connection: connB, role: .responder, config: MuxConfig(keepaliveInterval: nil))
     await a.close()
     await #expect(throws: MuxError.self) {
       _ = try await a.open()
@@ -471,9 +481,13 @@ struct MuxConfigTests {
 
   @Test("Custom values")
   func custom() {
-    let c = MuxConfig(initialWindowSize: 1024, maxFramePayloadSize: 512,
-                      keepaliveInterval: .seconds(5), keepaliveTimeout: .seconds(2),
-                      maxConcurrentStreams: 100)
+    let c = MuxConfig(
+      initialWindowSize: 1024,
+      maxFramePayloadSize: 512,
+      keepaliveInterval: .seconds(5),
+      keepaliveTimeout: .seconds(2),
+      maxConcurrentStreams: 100,
+    )
     #expect(c.initialWindowSize == 1024)
     #expect(c.maxFramePayloadSize == 512)
   }

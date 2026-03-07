@@ -1,14 +1,14 @@
-import Testing
-import Mux
-@testable import MuxWebSocket
+import HTTPTypes
 import Hummingbird
 import HummingbirdCore
 import HummingbirdWebSocket
-import WSClient
+import Logging
+import Mux
+@testable import MuxWebSocket
 import NIOCore
 import NIOPosix
-import Logging
-import HTTPTypes
+import Testing
+import WSClient
 
 @Suite("WebSocket integration")
 struct WebSocketIntegrationTests {
@@ -32,14 +32,14 @@ struct WebSocketIntegrationTests {
     arguments: [
       // Exactly one full frame — length == maxFrameSize, decoder check is
       // `length > maxFrameSize` so this must pass.
-      (1 << 14),
+      1 << 14,
       // One byte over — requires chunking into two frames.
       (1 << 14) + 1,
       // Two full frames exactly.
       (1 << 14) * 2,
       // Two frames + 1 byte remainder.
       (1 << 14) * 2 + 1,
-    ]
+    ],
   )
   func frameSizeBoundary(payloadSize: Int) async throws {
     let payload = (0 ..< payloadSize).map { UInt8(truncatingIfNeeded: $0) }
@@ -64,7 +64,7 @@ struct WebSocketIntegrationTests {
           let conn = WebSocketConnection(inbound: inbound, outbound: outbound)
           let session = MuxSession(
             connection: conn, role: .responder,
-            config: MuxConfig(keepaliveInterval: nil)
+            config: MuxConfig(keepaliveInterval: nil),
           )
           try await withThrowingTaskGroup(of: Void.self) { group in
             group.addTask { try await session.run() }
@@ -85,7 +85,7 @@ struct WebSocketIntegrationTests {
           }
         }
       },
-      configuration: .init(address: .hostname("127.0.0.1", port: port))
+      configuration: .init(address: .hostname("127.0.0.1", port: port)),
     )
 
     let serverTask = Task { try await app.run() }
@@ -93,12 +93,12 @@ struct WebSocketIntegrationTests {
 
     try await WebSocketClient.connect(
       url: .init("ws://127.0.0.1:\(port)"),
-      logger: Logger(label: "test")
+      logger: Logger(label: "test"),
     ) { inbound, outbound, _ in
       let conn = WebSocketConnection(inbound: inbound, outbound: outbound)
       let session = MuxSession(
         connection: conn, role: .initiator,
-        config: MuxConfig(keepaliveInterval: nil)
+        config: MuxConfig(keepaliveInterval: nil),
       )
       let runTask = Task { try await session.run() }
       defer { runTask.cancel() }
@@ -141,7 +141,7 @@ private func sendAndReceive(payload: [UInt8]) async throws -> [UInt8] {
         let conn = WebSocketConnection(inbound: inbound, outbound: outbound)
         let session = MuxSession(
           connection: conn, role: .responder,
-          config: MuxConfig(keepaliveInterval: nil)
+          config: MuxConfig(keepaliveInterval: nil),
         )
         try await withThrowingTaskGroup(of: Void.self) { group in
           group.addTask { try await session.run() }
@@ -162,7 +162,7 @@ private func sendAndReceive(payload: [UInt8]) async throws -> [UInt8] {
         }
       }
     },
-    configuration: .init(address: .hostname("127.0.0.1", port: port))
+    configuration: .init(address: .hostname("127.0.0.1", port: port)),
   )
 
   let serverTask = Task { try await app.run() }
@@ -170,12 +170,12 @@ private func sendAndReceive(payload: [UInt8]) async throws -> [UInt8] {
 
   try await WebSocketClient.connect(
     url: .init("ws://127.0.0.1:\(port)"),
-    logger: Logger(label: "test")
+    logger: Logger(label: "test"),
   ) { inbound, outbound, _ in
     let conn = WebSocketConnection(inbound: inbound, outbound: outbound)
     let session = MuxSession(
       connection: conn, role: .initiator,
-      config: MuxConfig(keepaliveInterval: nil)
+      config: MuxConfig(keepaliveInterval: nil),
     )
     let runTask = Task { try await session.run() }
     defer { runTask.cancel() }
@@ -195,6 +195,11 @@ private func sendAndReceive(payload: [UInt8]) async throws -> [UInt8] {
 
 private actor _SharedData {
   var data: [UInt8] = []
-  func set(_ d: [UInt8]) { data = d }
-  func get() -> [UInt8] { data }
+  func set(_ d: [UInt8]) {
+    data = d
+  }
+
+  func get() -> [UInt8] {
+    data
+  }
 }

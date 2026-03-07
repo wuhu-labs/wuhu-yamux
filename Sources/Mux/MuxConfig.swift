@@ -25,7 +25,7 @@ public struct MuxConfig: Sendable {
     maxFramePayloadSize: UInt32 = 64 * 1024,
     keepaliveInterval: Duration? = .seconds(30),
     keepaliveTimeout: Duration = .seconds(10),
-    maxConcurrentStreams: UInt32 = 0
+    maxConcurrentStreams: UInt32 = 0,
   ) {
     self.initialWindowSize = initialWindowSize
     self.maxFramePayloadSize = maxFramePayloadSize

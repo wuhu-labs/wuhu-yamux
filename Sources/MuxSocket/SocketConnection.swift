@@ -1,9 +1,9 @@
 #if canImport(Glibc)
-import Glibc
+  import Glibc
 #elseif canImport(Musl)
-import Musl
+  import Musl
 #elseif canImport(Darwin)
-import Darwin
+  import Darwin
 #endif
 
 import Mux
@@ -12,9 +12,9 @@ import NIOPosix
 
 /// A `Connection` backed by a NIO `Channel` (TCP or Unix domain socket).
 ///
-/// Created by `TCPListener` (server side) or `TCPConnector` (client side),
-/// or via `TCPConnection.wrap(channel:)`.
-public final class TCPConnection: Connection, @unchecked Sendable {
+/// Created by `SocketListener` (server side) or `SocketConnector` (client
+/// side), or via `SocketConnection.wrap(channel:)`.
+public final class SocketConnection: Connection, @unchecked Sendable {
   private let channel: Channel
   private let readState: _ReadState
 
@@ -36,15 +36,15 @@ public final class TCPConnection: Connection, @unchecked Sendable {
     try? await channel.close()
   }
 
-  /// Create a `TCPConnection` from a raw NIO `Channel`.
+  /// Create a `SocketConnection` from a raw NIO `Channel`.
   /// Installs the necessary channel handler.
-  public static func wrap(channel: Channel) -> TCPConnection {
+  public static func wrap(channel: Channel) -> SocketConnection {
     let state = _ReadState()
     let handler = _MuxChannelHandler(readState: state)
     channel.pipeline.addHandler(handler).whenFailure { _ in
       state.receiveError(MuxError.connectionLost)
     }
-    return TCPConnection(channel: channel, readState: state)
+    return SocketConnection(channel: channel, readState: state)
   }
 }
 
@@ -52,17 +52,25 @@ public final class TCPConnection: Connection, @unchecked Sendable {
 
 /// Bridges NIO's push-based reads to Connection's pull-based reads.
 final class _ReadState: @unchecked Sendable {
-  private var buffer: ByteBuffer = ByteBuffer()
+  private var buffer: ByteBuffer = .init()
   private var eof = false
   private var error: (any Error)?
   private var waiter: CheckedContinuation<Int, any Error>?
   private var waiterBuffer: UnsafeMutableRawBufferPointer?
   private var _lock = pthread_mutex_t()
 
-  init() { pthread_mutex_init(&_lock, nil) }
+  init() {
+    pthread_mutex_init(&_lock, nil)
+  }
+
   deinit { pthread_mutex_destroy(&_lock) }
-  private func lock() { pthread_mutex_lock(&_lock) }
-  private func unlock() { pthread_mutex_unlock(&_lock) }
+  private func lock() {
+    pthread_mutex_lock(&_lock)
+  }
+
+  private func unlock() {
+    pthread_mutex_unlock(&_lock)
+  }
 
   func read(into target: UnsafeMutableRawBufferPointer) async throws -> Int {
     lock()
@@ -147,13 +155,15 @@ final class _MuxChannelHandler: ChannelInboundHandler, @unchecked Sendable {
   typealias InboundIn = ByteBuffer
   let readState: _ReadState
 
-  init(readState: _ReadState) { self.readState = readState }
+  init(readState: _ReadState) {
+    self.readState = readState
+  }
 
-  func channelRead(context: ChannelHandlerContext, data: NIOAny) {
+  func channelRead(context _: ChannelHandlerContext, data: NIOAny) {
     readState.receive(unwrapInboundIn(data))
   }
 
-  func channelInactive(context: ChannelHandlerContext) {
+  func channelInactive(context _: ChannelHandlerContext) {
     readState.receiveEOF()
   }
 

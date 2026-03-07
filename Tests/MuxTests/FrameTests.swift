@@ -1,5 +1,5 @@
-import Testing
 @testable import Mux
+import Testing
 
 @Suite("Frame encoding/decoding")
 struct FrameTests {
