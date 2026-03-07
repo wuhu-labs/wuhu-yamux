@@ -4,7 +4,7 @@ import Mux
 import Hummingbird
 import HummingbirdCore
 import HummingbirdWebSocket
-import HummingbirdWSClient
+import WSClient
 import NIOCore
 import NIOPosix
 import Logging

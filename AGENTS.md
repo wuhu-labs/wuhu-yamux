@@ -43,11 +43,13 @@ Key types:
 - **`TCPConnector`** — dials a remote address, returns a `MuxSession`.
 - Unix domain socket support via the same types with UDS addresses.
 
-### `MuxWebSocket` — WebSocket transport (Hummingbird)
+### `MuxWebSocket` — WebSocket transport (swift-websocket)
 
-- **`WebSocketConnection`** — wraps a Hummingbird WebSocket as a `Connection`.
-- Server-side upgrade handler helpers.
-- Client-side connector helpers.
+- **`WebSocketConnection`** — wraps a `WebSocketInboundStream` / `WebSocketOutboundWriter`
+  (from [swift-websocket](https://github.com/hummingbird-project/swift-websocket)) as a
+  `Connection`. Works with any framework that provides these types (e.g. Hummingbird).
+- Server-side and client-side usage is framework-agnostic — consumers construct a
+  `WebSocketConnection` from whatever WebSocket library they use.
 
 ## Conventions
 

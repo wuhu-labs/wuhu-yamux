@@ -8,8 +8,7 @@ import Darwin
 
 import Mux
 import NIOCore
-import HummingbirdWebSocket
-import HummingbirdWSClient
+import WSCore
 
 /// A `Connection` backed by a WebSocket.
 ///

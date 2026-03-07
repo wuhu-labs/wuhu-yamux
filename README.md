@@ -12,7 +12,7 @@ ordered byte stream (TCP, WebSocket, Unix domain socket, in-memory pipe).
 |--------|-------------|--------------|
 | `Mux` | Core yamux protocol — frame codec, session, streams, flow control, keepalive | None (pure Swift concurrency) |
 | `MuxTCP` | TCP and Unix domain socket transports | SwiftNIO |
-| `MuxWebSocket` | WebSocket transport | Hummingbird WebSocket |
+| `MuxWebSocket` | WebSocket transport | [swift-websocket](https://github.com/hummingbird-project/swift-websocket) (`WSCore`) |
 
 ## Usage
 
