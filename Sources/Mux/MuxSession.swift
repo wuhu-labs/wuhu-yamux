@@ -71,7 +71,7 @@ actor _SessionState {
   // MARK: - Run
 
   nonisolated func run() async throws {
-    try await withThrowingDiscardingTaskGroup { group in
+    try await withThrowingTaskGroup(of: Void.self) { group in
       group.addTask {
         try await self.readLoop()
       }
@@ -80,6 +80,14 @@ actor _SessionState {
           try await self.keepaliveLoop()
         }
       }
+      // Wait for first child to throw or complete, cancel the rest.
+      do {
+        try await group.next()
+      } catch {
+        group.cancelAll()
+        throw error
+      }
+      group.cancelAll()
     }
     await teardown()
   }
